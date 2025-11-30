@@ -46,7 +46,6 @@ namespace ProjectRoguelike.Gameplay.Player
             }
 
             _isDead = true;
-            Debug.Log("[PlayerDeathHandler] Player died!");
 
             // Disable movement
             if (disableMovementOnDeath && _movement != null)
@@ -109,7 +108,6 @@ namespace ProjectRoguelike.Gameplay.Player
                 inputRouter.enabled = true;
             }
 
-            Debug.Log("[PlayerDeathHandler] Player revived!");
         }
     }
 }

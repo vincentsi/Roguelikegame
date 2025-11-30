@@ -10,12 +10,20 @@ namespace ProjectRoguelike.Gameplay.Weapons
         [SerializeField] private float impulse = 5f;
         [SerializeField] private ParticleSystem muzzleFlash;
         [SerializeField] private GameObject hitVfxPrefab;
+        [SerializeField] private WeaponAudio weaponAudio;
 
         protected override void HandleShot(Vector3 origin, Vector3 direction)
         {
+            // Play muzzle flash
             if (muzzleFlash != null)
             {
                 muzzleFlash.Play();
+            }
+
+            // Play fire sound
+            if (weaponAudio != null)
+            {
+                weaponAudio.PlayFireSound();
             }
 
             if (!Physics.Raycast(origin, direction, out var hit, range, hitMask, QueryTriggerInteraction.Ignore))
@@ -23,8 +31,6 @@ namespace ProjectRoguelike.Gameplay.Weapons
                 return;
             }
 
-            Debug.Log($"[HitscanWeapon] Hit: {hit.collider.name} at {hit.point}");
-            
             // Try to get IDamageable from the hit object or its parents
             var damageable = hit.collider.GetComponent<IDamageable>();
             if (damageable == null)
@@ -34,12 +40,7 @@ namespace ProjectRoguelike.Gameplay.Weapons
             
             if (damageable != null)
             {
-                Debug.Log($"[HitscanWeapon] Applying {damage} damage to {hit.collider.name}");
                 damageable.ApplyDamage(damage);
-            }
-            else
-            {
-                Debug.Log($"[HitscanWeapon] No IDamageable found on {hit.collider.name} or its parents");
             }
 
             if (hit.rigidbody != null)
@@ -47,10 +48,22 @@ namespace ProjectRoguelike.Gameplay.Weapons
                 hit.rigidbody.AddForceAtPosition(direction * impulse, hit.point, ForceMode.Impulse);
             }
 
+            // Spawn hit VFX
             if (hitVfxPrefab != null)
             {
                 var vfx = Object.Instantiate(hitVfxPrefab, hit.point, Quaternion.LookRotation(hit.normal));
+                var particleSystem = vfx.GetComponent<ParticleSystem>();
+                if (particleSystem != null)
+                {
+                    particleSystem.Play();
+                }
                 Object.Destroy(vfx, 2f);
+            }
+
+            // Play hit sound
+            if (weaponAudio != null)
+            {
+                weaponAudio.PlayHitSound();
             }
         }
     }

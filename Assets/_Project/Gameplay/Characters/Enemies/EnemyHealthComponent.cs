@@ -22,24 +22,20 @@ namespace ProjectRoguelike.Gameplay.Enemies
         private void Awake()
         {
             CurrentHealth = maxHealth;
-            Debug.Log($"[EnemyHealth] Initialized with {CurrentHealth}/{maxHealth} health. IsAlive: {IsAlive}");
         }
 
         public void ApplyDamage(float amount)
         {
             if (amount <= 0f || !IsAlive)
             {
-                Debug.Log($"[EnemyHealth] Ignoring damage: amount={amount}, IsAlive={IsAlive}");
                 return;
             }
 
             CurrentHealth = Mathf.Max(0f, CurrentHealth - amount);
-            Debug.Log($"[EnemyHealth] Took {amount} damage. Health: {CurrentHealth}/{maxHealth}");
             OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
 
             if (CurrentHealth <= 0f)
             {
-                Debug.Log("[EnemyHealth] Enemy died!");
                 OnEnemyDied?.Invoke();
             }
         }

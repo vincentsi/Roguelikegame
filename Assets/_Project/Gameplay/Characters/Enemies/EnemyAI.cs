@@ -185,7 +185,6 @@ namespace ProjectRoguelike.Gameplay.Enemies
                 var playerStats = _player.GetComponent<ProjectRoguelike.Gameplay.Player.PlayerStatsComponent>();
                 if (playerStats != null && playerStats.CurrentHealth > 0f)
                 {
-                    Debug.Log($"[EnemyAI] Attacking player for {attackDamage} damage");
                     playerStats.ApplyDamage(attackDamage);
                 }
                 else if (playerStats != null && playerStats.CurrentHealth <= 0f)

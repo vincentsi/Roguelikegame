@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ProjectRoguelike.Gameplay.Weapons;
 
 namespace ProjectRoguelike.Gameplay.Weapons
 {
@@ -91,6 +92,10 @@ namespace ProjectRoguelike.Gameplay.Weapons
             ammoReserve -= toLoad;
             _currentAmmo += toLoad;
             RaiseAmmoChanged();
+            
+            // Play reload sound if available
+            var weaponAudio = GetComponent<WeaponAudio>();
+            weaponAudio?.PlayReloadSound();
         }
 
         public Vector2 SampleRecoil()
