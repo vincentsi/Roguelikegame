@@ -23,8 +23,24 @@ namespace ProjectRoguelike.Gameplay.Weapons
                 return;
             }
 
+            Debug.Log($"[HitscanWeapon] Hit: {hit.collider.name} at {hit.point}");
+            
+            // Try to get IDamageable from the hit object or its parents
             var damageable = hit.collider.GetComponent<IDamageable>();
-            damageable?.ApplyDamage(damage);
+            if (damageable == null)
+            {
+                damageable = hit.collider.GetComponentInParent<IDamageable>();
+            }
+            
+            if (damageable != null)
+            {
+                Debug.Log($"[HitscanWeapon] Applying {damage} damage to {hit.collider.name}");
+                damageable.ApplyDamage(damage);
+            }
+            else
+            {
+                Debug.Log($"[HitscanWeapon] No IDamageable found on {hit.collider.name} or its parents");
+            }
 
             if (hit.rigidbody != null)
             {

@@ -42,9 +42,11 @@ namespace ProjectRoguelike.Core
             Services = new ServiceRegistry();
             EventBus = new GameEventBus();
             GameStateMachine = new GameStateMachine();
+            var playerManager = new PlayerManager();
 
             Services.Register(EventBus);
             Services.Register(GameStateMachine);
+            Services.Register(playerManager);
 
             var context = new GameStateContext(Services, EventBus);
             GameStateMachine.SetContext(context);
