@@ -1,3 +1,31 @@
+# Unity generated folders
+Library/
+Temp/
+Logs/
+UserSettings/
+MemoryCaptures/
+Recordings/
+
+# Build artifacts
+Build/
+Builds/
+obj/
+Obj/
+
+# IDE / tooling
+.vs/
+.idea/
+*.csproj
+*.sln
+*.user
+*.unityproj
+*.pidb
+*.opendb
+*.VC.db
+
+# Local configuration
+sysinfo.txt
+
 # Ignore documentation drafts per request
 Docs/
 
