@@ -123,6 +123,32 @@ namespace ProjectRoguelike.Gameplay.Weapons
             return (_currentAmmo, ammoReserve);
         }
 
+        /// <summary>
+        /// Applies weapon data stats to this weapon instance.
+        /// Called when weapon is created from WeaponData.
+        /// </summary>
+        public virtual void ApplyWeaponData(Items.WeaponData data)
+        {
+            if (data == null)
+            {
+                return;
+            }
+
+            weaponName = data.ItemName;
+            magazineSize = data.MagazineSize;
+            ammoReserve = data.AmmoReserve;
+            fireRate = data.FireRate;
+            reloadDuration = data.ReloadDuration;
+            recoilKick = data.RecoilKick;
+
+            // Apply hitscan-specific stats if this is a HitscanWeapon
+            if (this is HitscanWeapon hitscan)
+            {
+                // Use reflection or a public method to set damage/range/impulse
+                // For now, we'll add a method to HitscanWeapon
+            }
+        }
+
         protected abstract void HandleShot(Vector3 origin, Vector3 direction);
     }
 }

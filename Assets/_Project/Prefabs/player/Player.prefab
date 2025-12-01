@@ -165,9 +165,10 @@ GameObject:
   - component: {fileID: 3015381088386030497}
   - component: {fileID: 1666092924226630642}
   - component: {fileID: 13034945958522753}
+  - component: {fileID: 5555555555555555555}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -436,3 +437,18 @@ MonoBehaviour:
   minPitch: -85
   maxPitch: 85
   recoilReturnSpeed: 6
+  maxRecoilOffset: 5
+--- !u!114 &5555555555555555555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8986486478540803848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e870a267d8e90a44b58392247012a7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxSlots: 10
+  allowStacking: 1

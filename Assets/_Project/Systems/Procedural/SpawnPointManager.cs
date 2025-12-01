@@ -59,7 +59,27 @@ namespace ProjectRoguelike.Procedural
                 }
             }
 
-            // TODO: Spawn loot and props when systems are ready
+            // Spawn loot in loot spawn points
+            if (roomModule.LootSpawnPoints.Count > 0)
+            {
+                var lootCount = UnityEngine.Random.Range(0, roomModule.LootSpawnPoints.Count + 1);
+                if (_seed != null)
+                {
+                    lootCount = _seed.NextInt(roomModule.LootSpawnPoints.Count + 1);
+                }
+
+                var availableLootSpawns = new List<Transform>(roomModule.LootSpawnPoints);
+                for (int i = 0; i < lootCount && availableLootSpawns.Count > 0; i++)
+                {
+                    var spawnIndex = _seed != null ? _seed.NextInt(availableLootSpawns.Count) : UnityEngine.Random.Range(0, availableLootSpawns.Count);
+                    var spawnPoint = availableLootSpawns[spawnIndex];
+                    availableLootSpawns.RemoveAt(spawnIndex);
+
+                    // Spawn a loot container or pickup at this point
+                    // This will be configured per room type
+                    // For now, we'll just mark the spawn point for later use
+                }
+            }
         }
 
         public void SpawnInAllRooms(RoomAssembler assembler, DungeonGenerator generator, GameObject enemyPrefab)

@@ -72,6 +72,20 @@ namespace ProjectRoguelike.Gameplay.Weapons
             }
         }
 
+        public override void ApplyWeaponData(Items.WeaponData data)
+        {
+            base.ApplyWeaponData(data);
+            
+            if (data == null)
+            {
+                return;
+            }
+
+            damage = data.Damage;
+            range = data.Range;
+            impulse = data.Impulse;
+        }
+
         private void NotifyHearingSensors(Vector3 soundPosition)
         {
             // Find all hearing sensors in the scene and notify them

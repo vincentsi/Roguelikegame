@@ -15,6 +15,8 @@ GameObject:
   - component: {fileID: 4197899931319149536}
   - component: {fileID: 5200586292109841168}
   - component: {fileID: 1809326651236619492}
+  - component: {fileID: -2052898160998463158}
+  - component: {fileID: 8457351772710428357}
   m_Layer: 0
   m_Name: BasicEnemy
   m_TagString: Enemy
@@ -143,6 +145,44 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyData: {fileID: 11400000, guid: 87a036bc8cc8be44db6d34ccf04c8178, type: 2}
+--- !u!114 &-2052898160998463158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4307831728725833519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 180f21a3caf867241bbe49241a17aab8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lootTable:
+  - itemData: {fileID: 11400000, guid: f45ec56cd3363c94ea6757bf25d3fb7c, type: 2}
+    weight: 0.5
+  - itemData: {fileID: 11400000, guid: 73ad2dc9847764a40b438b4cc8c0ce37, type: 2}
+    weight: 0.1
+  - itemData: {fileID: 11400000, guid: 8c823c6b9ec69374a840c90450f331ff, type: 2}
+    weight: 0.3
+  minDrops: 0
+  maxDrops: 1
+  dropRadius: 1
+  itemPickupPrefab: {fileID: 5126676131296619028, guid: 60085a082ca0ba8419b87f45a229a3a7, type: 3}
+  spawnOnStart: 0
+  spawnOnDeath: 1
+--- !u!114 &8457351772710428357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4307831728725833519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a09bc1aae286ae42bc5958ea550ae0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currencyReward: 10
 --- !u!1 &8174068676104091850
 GameObject:
   m_ObjectHideFlags: 0

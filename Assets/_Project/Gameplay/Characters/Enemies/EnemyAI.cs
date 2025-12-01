@@ -1,6 +1,7 @@
 using ProjectRoguelike.Core;
 using ProjectRoguelike.AI.Sensors;
 using ProjectRoguelike.AI.AttackPatterns;
+using ProjectRoguelike.Gameplay.Items;
 using UnityEngine;
 
 namespace ProjectRoguelike.Gameplay.Enemies
@@ -335,10 +336,24 @@ namespace ProjectRoguelike.Gameplay.Enemies
                 collider.enabled = false;
             }
             
+            // Drop loot if LootDrop component exists
+            var lootDrop = GetComponent<Items.LootDrop>();
+            if (lootDrop != null)
+            {
+                lootDrop.OnDeath();
+            }
+            
+            // Give currency reward if EnemyReward component exists
+            var enemyReward = GetComponent<EnemyReward>();
+            if (enemyReward != null)
+            {
+                enemyReward.OnEnemyDied();
+            }
+            
             // Despawn after delay
             Destroy(gameObject, despawnDelay);
             
-            // TODO: Play death animation, drop loot, etc.
+            // TODO: Play death animation, etc.
         }
 
         private void OnDrawGizmosSelected()
