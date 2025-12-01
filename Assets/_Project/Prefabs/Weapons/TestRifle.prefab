@@ -5165,7 +5165,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32fb4dcba6c1e734daae2e69a2e82ed1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fireSound: {fileID: 0}
+  fireSound: {fileID: 8300000, guid: 8581f806dddef8046b4942de05b897be, type: 3}
   hitSound: {fileID: 0}
   reloadSound: {fileID: 0}
   fireVolume: 0.7

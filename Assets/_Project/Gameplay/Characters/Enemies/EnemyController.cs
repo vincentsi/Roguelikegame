@@ -17,7 +17,17 @@ namespace ProjectRoguelike.Gameplay.Enemies
         private NavMeshAgent _agent;
         private Vector3 _targetPosition;
 
-        public bool HasReachedDestination => _agent != null && !_agent.pathPending && _agent.remainingDistance < 0.1f;
+        public bool HasReachedDestination
+        {
+            get
+            {
+                if (_agent == null || !_agent.isOnNavMesh)
+                {
+                    return false;
+                }
+                return !_agent.pathPending && _agent.remainingDistance < 0.1f;
+            }
+        }
 
         private void Awake()
         {
@@ -68,6 +78,33 @@ namespace ProjectRoguelike.Gameplay.Enemies
             {
                 var targetRotation = Quaternion.LookRotation(direction);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
+        }
+
+        public void SetWalkSpeed(float speed)
+        {
+            walkSpeed = speed;
+            if (_agent != null && !_agent.isStopped)
+            {
+                _agent.speed = _agent.speed == runSpeed ? runSpeed : walkSpeed;
+            }
+        }
+
+        public void SetRunSpeed(float speed)
+        {
+            runSpeed = speed;
+            if (_agent != null && _agent.speed == runSpeed)
+            {
+                _agent.speed = runSpeed;
+            }
+        }
+
+        public void SetRotationSpeed(float speed)
+        {
+            rotationSpeed = speed;
+            if (_agent != null)
+            {
+                _agent.angularSpeed = rotationSpeed * 60f;
             }
         }
     }

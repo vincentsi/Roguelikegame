@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3165041305424966234}
   - component: {fileID: 4197899931319149536}
   - component: {fileID: 5200586292109841168}
+  - component: {fileID: 1809326651236619492}
   m_Layer: 0
   m_Name: BasicEnemy
   m_TagString: Enemy
@@ -105,6 +106,7 @@ MonoBehaviour:
   attackDamage: 10
   patrolRadius: 5
   patrolWaitTime: 2
+  despawnDelay: 3
 --- !u!136 &5200586292109841168
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -128,6 +130,19 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &1809326651236619492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4307831728725833519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e93a7daa11b2e064692c5ce98b12e077, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyData: {fileID: 11400000, guid: 87a036bc8cc8be44db6d34ccf04c8178, type: 2}
 --- !u!1 &8174068676104091850
 GameObject:
   m_ObjectHideFlags: 0

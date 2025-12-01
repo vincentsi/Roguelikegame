@@ -56,6 +56,13 @@ namespace ProjectRoguelike.Gameplay.Enemies
             CurrentHealth = maxHealth;
             OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
         }
+
+        public void SetMaxHealth(float newMaxHealth)
+        {
+            maxHealth = newMaxHealth;
+            CurrentHealth = Mathf.Min(CurrentHealth, maxHealth);
+            OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
+        }
     }
 }
 

@@ -1,4 +1,6 @@
 using ProjectRoguelike.Core;
+using ProjectRoguelike.AI.Sensors;
+using ProjectRoguelike.AI.AttackPatterns;
 using UnityEngine;
 
 namespace ProjectRoguelike.Gameplay.Enemies
@@ -37,6 +39,11 @@ namespace ProjectRoguelike.Gameplay.Enemies
         private AIState _currentState = AIState.Patrol;
         private PlayerManager _playerManager;
 
+        // Sensors (optional - fallback to distance-based if not present)
+        private VisionSensor _visionSensor;
+        private HearingSensor _hearingSensor;
+        private AttackPatternBase _attackPattern;
+
         private Vector3 _patrolCenter;
         private Vector3 _patrolTarget;
         private float _attackCooldownTimer;
@@ -49,6 +56,11 @@ namespace ProjectRoguelike.Gameplay.Enemies
             _controller = GetComponent<EnemyController>();
             _health = GetComponent<EnemyHealthComponent>();
             _patrolCenter = transform.position;
+
+            // Get sensors (optional)
+            _visionSensor = GetComponent<VisionSensor>();
+            _hearingSensor = GetComponent<HearingSensor>();
+            _attackPattern = GetComponent<AttackPatternBase>();
 
             _health.OnEnemyDied += OnEnemyDied;
         }
@@ -72,6 +84,21 @@ namespace ProjectRoguelike.Gameplay.Enemies
             }
 
             SetPatrolTarget();
+
+            // Initialize attack pattern if available
+            if (_attackPattern != null && _player != null)
+            {
+                var dataApplier = GetComponent<EnemyDataApplier>();
+                if (dataApplier != null)
+                {
+                    dataApplier.InitializeAttackPattern(_player);
+                }
+                else
+                {
+                    // Fallback: initialize with default values
+                    _attackPattern.Initialize(_player, attackDamage, attackRange, attackCooldown);
+                }
+            }
         }
 
         private void Update()
@@ -106,14 +133,43 @@ namespace ProjectRoguelike.Gameplay.Enemies
 
             var distanceToPlayer = Vector3.Distance(transform.position, _player.position);
 
+            // Detection: Use sensors if available, otherwise fallback to distance
+            bool canSeePlayer = false;
+            bool canHearPlayer = false;
+
+            if (_visionSensor != null)
+            {
+                canSeePlayer = _visionSensor.HasLineOfSight && _visionSensor.HasTarget;
+                if (canSeePlayer && _visionSensor.Target != _player)
+                {
+                    _player = _visionSensor.Target; // Update player reference from sensor
+                }
+            }
+            else
+            {
+                // Fallback: simple distance check
+                canSeePlayer = distanceToPlayer <= detectionRange;
+            }
+
+            if (_hearingSensor != null)
+            {
+                canHearPlayer = _hearingSensor.HasHeardSomething;
+            }
+
             // State machine
             switch (_currentState)
             {
                 case AIState.Patrol:
                     UpdatePatrol();
-                    if (distanceToPlayer <= detectionRange)
+                    // Chase if we can see or hear the player
+                    if (canSeePlayer || canHearPlayer)
                     {
                         ChangeState(AIState.Chase);
+                        // If we heard something but can't see, investigate the sound
+                        if (canHearPlayer && !canSeePlayer && _hearingSensor.LastHeardPosition.HasValue)
+                        {
+                            _controller.SetDestination(_hearingSensor.LastHeardPosition.Value);
+                        }
                     }
                     break;
 
@@ -169,16 +225,29 @@ namespace ProjectRoguelike.Gameplay.Enemies
             _controller.Stop();
             _controller.LookAt(_player.position);
 
-            if (_attackCooldownTimer <= 0f)
+            // Use attack pattern if available, otherwise fallback to simple attack
+            if (_attackPattern != null)
             {
-                PerformAttack();
-                _attackCooldownTimer = attackCooldown;
+                _attackPattern.Tick(Time.deltaTime);
+                if (_attackPattern.CanAttack())
+                {
+                    _attackPattern.ExecuteAttack();
+                }
+            }
+            else
+            {
+                // Fallback: simple melee attack
+                if (_attackCooldownTimer <= 0f)
+                {
+                    PerformAttack();
+                    _attackCooldownTimer = attackCooldown;
+                }
             }
         }
 
         private void PerformAttack()
         {
-            // Simple melee attack - damage player if in range
+            // Simple melee attack - damage player if in range (fallback)
             var distanceToPlayer = Vector3.Distance(transform.position, _player.position);
             if (distanceToPlayer <= attackRange)
             {
@@ -274,15 +343,12 @@ namespace ProjectRoguelike.Gameplay.Enemies
 
         private void OnDrawGizmosSelected()
         {
-            // Draw detection range
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, detectionRange);
-
-            // Draw attack range
+            // Detection range is shown by VisionSensor (yellow circle)
+            // Attack range
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, attackRange);
 
-            // Draw patrol radius
+            // Patrol radius
             Gizmos.color = Color.blue;
             Gizmos.DrawWireSphere(_patrolCenter, patrolRadius);
         }

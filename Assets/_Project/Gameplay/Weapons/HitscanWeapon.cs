@@ -1,4 +1,5 @@
 using ProjectRoguelike.Gameplay.Combat;
+using ProjectRoguelike.AI.Sensors;
 using UnityEngine;
 
 namespace ProjectRoguelike.Gameplay.Weapons
@@ -11,6 +12,7 @@ namespace ProjectRoguelike.Gameplay.Weapons
         [SerializeField] private ParticleSystem muzzleFlash;
         [SerializeField] private GameObject hitVfxPrefab;
         [SerializeField] private WeaponAudio weaponAudio;
+        [SerializeField] private float gunshotSoundIntensity = 1f; // How loud the gunshot is
 
         protected override void HandleShot(Vector3 origin, Vector3 direction)
         {
@@ -25,6 +27,9 @@ namespace ProjectRoguelike.Gameplay.Weapons
             {
                 weaponAudio.PlayFireSound();
             }
+
+            // Notify all hearing sensors about the gunshot
+            NotifyHearingSensors(origin);
 
             if (!Physics.Raycast(origin, direction, out var hit, range, hitMask, QueryTriggerInteraction.Ignore))
             {
@@ -64,6 +69,16 @@ namespace ProjectRoguelike.Gameplay.Weapons
             if (weaponAudio != null)
             {
                 weaponAudio.PlayHitSound();
+            }
+        }
+
+        private void NotifyHearingSensors(Vector3 soundPosition)
+        {
+            // Find all hearing sensors in the scene and notify them
+            var hearingSensors = FindObjectsOfType<HearingSensor>();
+            foreach (var sensor in hearingSensors)
+            {
+                sensor.OnSoundDetected(soundPosition, gunshotSoundIntensity);
             }
         }
     }
