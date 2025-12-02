@@ -34,6 +34,9 @@ namespace ProjectRoguelike.Systems.Hub
             CharacterSelection,
             NarrativeLab,
             StartRun,
+            StartRunLeft,
+            StartRunRight,
+            StartRunFront,
             Custom
         }
 
@@ -135,6 +138,21 @@ namespace ProjectRoguelike.Systems.Hub
                 case InteractableType.StartRun:
                     Debug.Log("[InteractableZone] Starting run...");
                     hubManager.StartRun();
+                    break;
+
+                case InteractableType.StartRunLeft:
+                    Debug.Log("[InteractableZone] Starting run from left door...");
+                    hubManager.StartRunLeft();
+                    break;
+
+                case InteractableType.StartRunRight:
+                    Debug.Log("[InteractableZone] Starting run from right door...");
+                    hubManager.StartRunRight();
+                    break;
+
+                case InteractableType.StartRunFront:
+                    Debug.Log("[InteractableZone] Starting run from front door...");
+                    hubManager.StartRunFront();
                     break;
 
                 case InteractableType.Custom:
