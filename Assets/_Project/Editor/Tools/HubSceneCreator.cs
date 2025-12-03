@@ -89,6 +89,10 @@ namespace ProjectRoguelike.Editor.Tools
             var narrativeLabObj = new GameObject("NarrativeLab");
             var narrativeLab = narrativeLabObj.AddComponent<NarrativeLab>();
 
+            // Create CollectionSystem
+            var collectionSystemObj = new GameObject("CollectionSystem");
+            var collectionSystem = collectionSystemObj.AddComponent<CollectionSystem>();
+
             // Create SaveSystem
             var saveSystemObj = new GameObject("SaveSystem");
             var saveSystem = saveSystemObj.AddComponent<SaveSystem>();
@@ -102,6 +106,7 @@ namespace ProjectRoguelike.Editor.Tools
             CreateInteractableZone("ShopZone", Vector3.zero, InteractableZone.InteractableType.Shop);
             CreateInteractableZone("CharacterSelectionZone", Vector3.zero, InteractableZone.InteractableType.CharacterSelection);
             CreateInteractableZone("NarrativeLabZone", Vector3.zero, InteractableZone.InteractableType.NarrativeLab);
+            CreateInteractableZone("CollectionZone", Vector3.zero, InteractableZone.InteractableType.Collection);
             
             // Create 3 Run Doors (Left, Right, Front) - will be positioned at doors
             CreateInteractableZone("RunDoor_Left", Vector3.zero, InteractableZone.InteractableType.StartRunLeft);
@@ -188,40 +193,63 @@ namespace ProjectRoguelike.Editor.Tools
 
         private static void CreateHubUI(HubManager hubManager)
         {
-            // Check if Canvas already exists
-            Canvas existingCanvas = UnityEngine.Object.FindObjectOfType<Canvas>();
-            if (existingCanvas != null)
-            {
-                Debug.Log("[HubSceneCreator] Canvas already exists, skipping UI creation.");
-                // Ensure EventSystem exists
-                EnsureEventSystem();
-                return;
-            }
-
-            // Create EventSystem first (required for UI interactions)
+            // Ensure EventSystem exists
             EnsureEventSystem();
 
-            // Create Canvas
-            GameObject canvasObj = new GameObject("HubCanvas");
-            Canvas canvas = canvasObj.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObj.AddComponent<CanvasScaler>();
-            canvasObj.AddComponent<GraphicRaycaster>();
+            // Check if Canvas already exists
+            Canvas existingCanvas = UnityEngine.Object.FindObjectOfType<Canvas>();
+            Transform canvasTransform;
+            
+            if (existingCanvas != null)
+            {
+                Debug.Log("[HubSceneCreator] Canvas already exists, creating missing UI panels.");
+                canvasTransform = existingCanvas.transform;
+            }
+            else
+            {
+                // Create Canvas
+                GameObject canvasObj = new GameObject("HubCanvas");
+                Canvas canvas = canvasObj.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvasObj.AddComponent<CanvasScaler>();
+                canvasObj.AddComponent<GraphicRaycaster>();
+                canvasTransform = canvasObj.transform;
+            }
 
-            // Create Shop UI
-            GameObject shopPanel = CreateShopUI(canvasObj.transform);
+            // Find or create Shop UI
+            GameObject shopPanel = GameObject.Find("ShopPanel");
+            if (shopPanel == null)
+            {
+                shopPanel = CreateShopUI(canvasTransform);
+            }
             
-            // Create Character Selection UI
-            GameObject characterSelectionPanel = CreateCharacterSelectionUI(canvasObj.transform);
+            // Find or create Character Selection UI
+            GameObject characterSelectionPanel = GameObject.Find("CharacterSelectionPanel");
+            if (characterSelectionPanel == null)
+            {
+                characterSelectionPanel = CreateCharacterSelectionUI(canvasTransform);
+            }
             
-            // Create Narrative Lab UI
-            GameObject narrativeLabPanel = CreateNarrativeLabUI(canvasObj.transform);
+            // Find or create Narrative Lab UI
+            GameObject narrativeLabPanel = GameObject.Find("NarrativeLabPanel");
+            if (narrativeLabPanel == null)
+            {
+                narrativeLabPanel = CreateNarrativeLabUI(canvasTransform);
+            }
+            
+            // Find or create Collection UI
+            GameObject collectionPanel = GameObject.Find("CollectionPanel");
+            if (collectionPanel == null)
+            {
+                collectionPanel = CreateCollectionUI(canvasTransform);
+            }
 
             // Assign UI to HubManager
             var serializedHubManager = new SerializedObject(hubManager);
             serializedHubManager.FindProperty("shopUI").objectReferenceValue = shopPanel;
             serializedHubManager.FindProperty("characterSelectionUI").objectReferenceValue = characterSelectionPanel;
             serializedHubManager.FindProperty("narrativeLabUI").objectReferenceValue = narrativeLabPanel;
+            serializedHubManager.FindProperty("collectionUI").objectReferenceValue = collectionPanel;
             serializedHubManager.ApplyModifiedProperties();
 
             Debug.Log("[HubSceneCreator] UI created and assigned to HubManager!");
@@ -332,6 +360,91 @@ namespace ProjectRoguelike.Editor.Tools
             serializedNarrativeUI.FindProperty("storyListParent").objectReferenceValue = content.transform;
             serializedNarrativeUI.FindProperty("closeButton").objectReferenceValue = closeButton.GetComponent<Button>();
             serializedNarrativeUI.ApplyModifiedProperties();
+
+            return panel;
+        }
+
+        private static GameObject CreateCollectionUI(Transform parent)
+        {
+            GameObject panel = CreatePanel(parent, "CollectionPanel", new Vector2(1000, 700));
+            panel.SetActive(false);
+
+            // Title
+            CreateText(panel.transform, "TitleText", "COLLECTION", 48, new Vector2(0, 300));
+
+            // Category Tabs (horizontal layout)
+            GameObject categoryTabsContainer = new GameObject("CategoryTabsContainer");
+            categoryTabsContainer.transform.SetParent(panel.transform);
+            HorizontalLayoutGroup tabsLayout = categoryTabsContainer.AddComponent<HorizontalLayoutGroup>();
+            tabsLayout.spacing = 10f;
+            tabsLayout.padding = new RectOffset(10, 10, 10, 10);
+            tabsLayout.childAlignment = TextAnchor.MiddleCenter;
+            RectTransform tabsRect = categoryTabsContainer.GetComponent<RectTransform>();
+            tabsRect.anchorMin = new Vector2(0.5f, 1f);
+            tabsRect.anchorMax = new Vector2(0.5f, 1f);
+            tabsRect.sizeDelta = new Vector2(900, 60);
+            tabsRect.anchoredPosition = new Vector2(0, -80);
+
+            // Item List (left side)
+            GameObject itemListScrollView = CreateScrollView(panel.transform, "ItemListScrollView", new Vector2(400, 500), new Vector2(-250, -50));
+            GameObject itemListContent = itemListScrollView.transform.Find("Viewport/Content").gameObject;
+
+            // Item Details (right side)
+            GameObject detailsPanel = new GameObject("ItemDetailsPanel");
+            detailsPanel.transform.SetParent(panel.transform);
+            Image detailsImage = detailsPanel.AddComponent<Image>();
+            detailsImage.color = new Color(0.15f, 0.15f, 0.15f, 0.8f);
+            RectTransform detailsRect = detailsPanel.GetComponent<RectTransform>();
+            detailsRect.anchorMin = new Vector2(0.5f, 0.5f);
+            detailsRect.anchorMax = new Vector2(0.5f, 0.5f);
+            detailsRect.sizeDelta = new Vector2(450, 500);
+            detailsRect.anchoredPosition = new Vector2(250, -50);
+
+            // Item Name
+            GameObject itemNameText = CreateText(detailsPanel.transform, "ItemNameText", "Item Name", 32, new Vector2(0, 200));
+            
+            // Item Icon
+            GameObject iconImage = new GameObject("ItemIconImage");
+            iconImage.transform.SetParent(detailsPanel.transform);
+            Image icon = iconImage.AddComponent<Image>();
+            icon.color = Color.gray;
+            RectTransform iconRect = iconImage.GetComponent<RectTransform>();
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRect.sizeDelta = new Vector2(150, 150);
+            iconRect.anchoredPosition = new Vector2(0, 50);
+
+            // Item Description
+            GameObject itemDescText = CreateText(detailsPanel.transform, "ItemDescriptionText", "Description", 18, new Vector2(0, -100));
+            RectTransform descRect = itemDescText.GetComponent<RectTransform>();
+            descRect.sizeDelta = new Vector2(400, 200);
+
+            // Item Status
+            GameObject itemStatusText = CreateText(detailsPanel.transform, "ItemStatusText", "Status", 24, new Vector2(0, -200));
+
+            // Close Button
+            GameObject closeButton = CreateButton(panel.transform, "CloseButton", "X", new Vector2(450, 300), new Vector2(50, 50));
+
+            // Create category tab prefab (simple button)
+            GameObject categoryTabPrefab = CreateButton(categoryTabsContainer.transform, "CategoryTabPrefab", "Tab", Vector2.zero, new Vector2(120, 50));
+            categoryTabPrefab.SetActive(false); // Hide prefab, will be used as template
+
+            // Create collection item prefab (simple button with text)
+            GameObject collectionItemPrefab = CreateButton(itemListContent.transform, "CollectionItemPrefab", "Item", Vector2.zero, new Vector2(350, 60));
+            collectionItemPrefab.SetActive(false); // Hide prefab, will be used as template
+
+            // Add CollectionUI component
+            CollectionUI collectionUI = panel.AddComponent<CollectionUI>();
+            var serializedCollectionUI = new SerializedObject(collectionUI);
+            serializedCollectionUI.FindProperty("categoryTabsParent").objectReferenceValue = categoryTabsContainer.transform;
+            serializedCollectionUI.FindProperty("itemListParent").objectReferenceValue = itemListContent.transform;
+            serializedCollectionUI.FindProperty("categoryTabPrefab").objectReferenceValue = categoryTabPrefab;
+            serializedCollectionUI.FindProperty("collectionItemPrefab").objectReferenceValue = collectionItemPrefab;
+            serializedCollectionUI.FindProperty("itemNameText").objectReferenceValue = itemNameText.GetComponent<TextMeshProUGUI>();
+            serializedCollectionUI.FindProperty("itemDescriptionText").objectReferenceValue = itemDescText.GetComponent<TextMeshProUGUI>();
+            serializedCollectionUI.FindProperty("itemIconImage").objectReferenceValue = icon;
+            serializedCollectionUI.FindProperty("itemStatusText").objectReferenceValue = itemStatusText.GetComponent<TextMeshProUGUI>();
+            serializedCollectionUI.FindProperty("closeButton").objectReferenceValue = closeButton.GetComponent<Button>();
+            serializedCollectionUI.ApplyModifiedProperties();
 
             return panel;
         }
@@ -820,6 +933,10 @@ namespace ProjectRoguelike.Editor.Tools
             // Narrative Lab area props (center, front)
             CreateTable(propsContainer.transform, "Table_NarrativeLab", new Vector3(0f, 0f, 15f));
             CreateScreen(propsContainer.transform, "Screen_NarrativeLab", new Vector3(0f, 1.5f, 15f));
+
+            // Collection area props (left side, front)
+            CreateTable(propsContainer.transform, "Table_Collection", new Vector3(-15f, 0f, 15f));
+            CreateScreen(propsContainer.transform, "Screen_Collection", new Vector3(-15f, 1.5f, 15f));
         }
 
         private static void CreateTable(Transform parent, string name, Vector3 position)
@@ -897,6 +1014,18 @@ namespace ProjectRoguelike.Editor.Tools
             else
             {
                 Debug.LogWarning("[HubSceneCreator] NarrativeLabZone not found!");
+            }
+
+            // Position CollectionZone near Collection props (left side, front)
+            GameObject collectionZone = GameObject.Find("CollectionZone");
+            if (collectionZone != null)
+            {
+                collectionZone.transform.position = new Vector3(-15f, 1f, 15f);
+                Debug.Log($"[HubSceneCreator] CollectionZone positioned at {collectionZone.transform.position}");
+            }
+            else
+            {
+                Debug.LogWarning("[HubSceneCreator] CollectionZone not found!");
             }
 
             // Position Run Doors at door locations

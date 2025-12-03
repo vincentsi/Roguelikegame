@@ -33,6 +33,7 @@ namespace ProjectRoguelike.Systems.Hub
             Shop,
             CharacterSelection,
             NarrativeLab,
+            Collection,
             StartRun,
             StartRunLeft,
             StartRunRight,
@@ -133,6 +134,10 @@ namespace ProjectRoguelike.Systems.Hub
 
                 case InteractableType.NarrativeLab:
                     hubManager.OpenNarrativeLab();
+                    break;
+
+                case InteractableType.Collection:
+                    hubManager.OpenCollection();
                     break;
 
                 case InteractableType.StartRun:

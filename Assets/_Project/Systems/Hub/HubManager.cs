@@ -15,6 +15,7 @@ namespace ProjectRoguelike.Systems.Hub
         [SerializeField] private GameObject characterSelectionUI;
         [SerializeField] private GameObject shopUI;
         [SerializeField] private GameObject narrativeLabUI;
+        [SerializeField] private GameObject collectionUI;
         [SerializeField] private GameObject playerPrefab; // Player prefab to spawn in hub
 
         [Header("Spawn Settings")]
@@ -80,6 +81,10 @@ namespace ProjectRoguelike.Systems.Hub
             if (narrativeLabUI != null)
             {
                 narrativeLabUI.SetActive(false);
+            }
+            if (collectionUI != null)
+            {
+                collectionUI.SetActive(false);
             }
 
             Debug.Log("[HubManager] Hub initialized");
@@ -228,6 +233,24 @@ namespace ProjectRoguelike.Systems.Hub
         }
 
         /// <summary>
+        /// Opens the collection screen.
+        /// </summary>
+        public void OpenCollection()
+        {
+            Debug.Log("[HubManager] Opening Collection...");
+            if (collectionUI != null)
+            {
+                collectionUI.SetActive(true);
+                OnUIOpened();
+                Debug.Log("[HubManager] Collection UI opened.");
+            }
+            else
+            {
+                Debug.LogWarning("[HubManager] Collection UI not assigned. Please create the UI in the Hub scene.");
+            }
+        }
+
+        /// <summary>
         /// Closes all UI panels.
         /// </summary>
         public void CloseAllUI()
@@ -235,6 +258,7 @@ namespace ProjectRoguelike.Systems.Hub
             if (characterSelectionUI != null) characterSelectionUI.SetActive(false);
             if (shopUI != null) shopUI.SetActive(false);
             if (narrativeLabUI != null) narrativeLabUI.SetActive(false);
+            if (collectionUI != null) collectionUI.SetActive(false);
             OnUIClosed();
         }
 

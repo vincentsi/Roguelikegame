@@ -46,27 +46,15 @@ namespace ProjectRoguelike.Gameplay.Player
             velocity.y = 0f; // Ignorer le mouvement vertical
             _speed = velocity.magnitude;
 
-            // Mettre à jour l'Animator
+            // Mettre à jour les paramètres de l'Animator
             if (HasParameter("Speed"))
             {
                 _animator.SetFloat("Speed", _speed);
-                // Debug: afficher la vitesse toutes les secondes
-                if (Time.frameCount % 60 == 0)
-                {
-                    Debug.Log($"[PlayerAnimation] Speed: {_speed:F2}, Current State: {GetCurrentStateName()}");
-                }
             }
-            else if (HasParameter("IsMoving"))
+
+            if (HasParameter("IsGrounded"))
             {
-                _animator.SetBool("IsMoving", _speed > 0.1f);
-            }
-            else
-            {
-                // Aucun paramètre trouvé - debug
-                if (Time.frameCount % 120 == 0)
-                {
-                    Debug.LogWarning("[PlayerAnimation] No 'Speed' or 'IsMoving' parameter found in Animator!");
-                }
+                _animator.SetBool("IsGrounded", _controller.isGrounded);
             }
         }
 
