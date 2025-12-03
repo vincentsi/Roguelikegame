@@ -12,6 +12,8 @@ namespace ProjectRoguelike.Procedural
         private readonly LevelSeed _seed;
         private readonly List<GameObject> _spawnedObjects = new();
 
+        public IReadOnlyList<GameObject> SpawnedObjects => _spawnedObjects;
+
         public SpawnPointManager(LevelSeed seed)
         {
             _seed = seed ?? throw new System.ArgumentNullException(nameof(seed));

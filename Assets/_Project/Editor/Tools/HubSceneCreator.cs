@@ -133,7 +133,7 @@ namespace ProjectRoguelike.Editor.Tools
                 leftDoorProperty.FindPropertyRelative("doorName").stringValue = "Left Door";
                 leftDoorProperty.FindPropertyRelative("levelName").stringValue = "Level 1";
                 leftDoorProperty.FindPropertyRelative("difficulty").intValue = 1;
-                leftDoorProperty.FindPropertyRelative("sceneName").stringValue = "Boot";
+                leftDoorProperty.FindPropertyRelative("sceneName").stringValue = "Run";
                 leftDoorProperty.FindPropertyRelative("isUnlocked").boolValue = true;
             }
             
@@ -142,7 +142,7 @@ namespace ProjectRoguelike.Editor.Tools
                 rightDoorProperty.FindPropertyRelative("doorName").stringValue = "Right Door";
                 rightDoorProperty.FindPropertyRelative("levelName").stringValue = "Level 2";
                 rightDoorProperty.FindPropertyRelative("difficulty").intValue = 2;
-                rightDoorProperty.FindPropertyRelative("sceneName").stringValue = "Boot";
+                rightDoorProperty.FindPropertyRelative("sceneName").stringValue = "Run";
                 rightDoorProperty.FindPropertyRelative("isUnlocked").boolValue = true;
             }
             
@@ -151,7 +151,7 @@ namespace ProjectRoguelike.Editor.Tools
                 frontDoorProperty.FindPropertyRelative("doorName").stringValue = "Front Door";
                 frontDoorProperty.FindPropertyRelative("levelName").stringValue = "Level 3";
                 frontDoorProperty.FindPropertyRelative("difficulty").intValue = 3;
-                frontDoorProperty.FindPropertyRelative("sceneName").stringValue = "Boot";
+                frontDoorProperty.FindPropertyRelative("sceneName").stringValue = "Run";
                 frontDoorProperty.FindPropertyRelative("isUnlocked").boolValue = true;
             }
             

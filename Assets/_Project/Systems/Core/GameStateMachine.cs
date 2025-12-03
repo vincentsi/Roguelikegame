@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine;
+using ProjectRoguelike.UI;
 
 namespace ProjectRoguelike.Core
 {
@@ -79,6 +81,12 @@ namespace ProjectRoguelike.Core
                 throw new InvalidOperationException("GameStateMachine context not set.");
             }
 
+            // Don't allow changing to None state
+            if (targetId == GameStateId.None)
+            {
+                return;
+            }
+
             if (_isTransitioning || (_currentState != null && _currentState.Id == targetId))
             {
                 return;
@@ -122,6 +130,24 @@ namespace ProjectRoguelike.Core
 
         protected virtual Task OnEnter(GameStateContext context) => Task.CompletedTask;
         protected virtual Task OnExit(GameStateContext context) => Task.CompletedTask;
+
+        protected LoadingScreen FindOrCreateLoadingScreen()
+        {
+            // First, try to find it via AppBootstrap (most reliable since it's DontDestroyOnLoad)
+            var bootstrap = AppBootstrap.Instance;
+            if (bootstrap != null)
+            {
+                // Loading screen should be a child of AppBootstrap
+                var loadingScreen = bootstrap.GetComponentInChildren<LoadingScreen>(true); // true = include inactive
+                if (loadingScreen != null)
+                {
+                    return loadingScreen;
+                }
+            }
+
+            // Fallback: try FindObjectOfType (might not work if scene is not loaded)
+            return UnityEngine.Object.FindObjectOfType<LoadingScreen>(true);
+        }
     }
 }
 

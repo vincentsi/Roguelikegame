@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -60,7 +61,6 @@ namespace ProjectRoguelike.Procedural
 
             // Create seed
             _levelSeed = seed == -1 ? new LevelSeed() : new LevelSeed(seed);
-            Debug.Log($"[DungeonManager] Generating dungeon with seed: {_levelSeed.Seed}");
 
             // Generate layout
             _generator = new DungeonGenerator(_levelSeed);
@@ -72,14 +72,22 @@ namespace ProjectRoguelike.Procedural
             // Rebuild NavMesh after rooms are placed
             RebuildNavMesh();
 
-            // Spawn enemies (after NavMesh is ready)
-            if (autoSpawnEnemies && enemyPrefab != null)
+            // Wait a frame for NavMesh to be fully ready
+            // (NavMesh rebuild is synchronous but agents need a frame to register)
+            if (Application.isPlaying)
             {
-                _spawnManager = new SpawnPointManager(_levelSeed);
-                _spawnManager.SpawnInAllRooms(_assembler, _generator, enemyPrefab);
+                StartCoroutine(SpawnEnemiesAfterNavMeshReady(enemyPrefab));
+            }
+            else
+            {
+                // In editor mode, spawn immediately
+                if (autoSpawnEnemies && enemyPrefab != null)
+                {
+                    _spawnManager = new SpawnPointManager(_levelSeed);
+                    _spawnManager.SpawnInAllRooms(_assembler, _generator, enemyPrefab);
+                }
             }
 
-            Debug.Log($"[DungeonManager] Generated dungeon with seed: {_levelSeed.Seed}");
         }
 
         [ContextMenu("Clear Dungeon")]
@@ -112,6 +120,19 @@ namespace ProjectRoguelike.Procedural
             seed = newSeed;
         }
 
+        public void SetTargetRoomCount(int roomCount)
+        {
+            targetRoomCount = roomCount;
+        }
+
+        public void SetAvailableRooms(List<RoomData> rooms)
+        {
+            if (rooms != null)
+            {
+                availableRooms = new List<RoomData>(rooms); // Create a copy to avoid reference issues
+            }
+        }
+
         public int GetCurrentSeed()
         {
             return _levelSeed?.Seed ?? seed;
@@ -128,7 +149,6 @@ namespace ProjectRoguelike.Procedural
                 {
                     var buildMethod = navMeshSurfaceType.GetMethod("BuildNavMesh");
                     buildMethod?.Invoke(navMeshSurface, null);
-                    Debug.Log("[DungeonManager] NavMesh rebuilt using NavMeshSurface");
                     return;
                 }
             }
@@ -146,11 +166,53 @@ namespace ProjectRoguelike.Procedural
             {
                 NavMesh.RemoveAllNavMeshData();
                 NavMesh.AddNavMeshData(data);
-                Debug.Log("[DungeonManager] NavMesh rebuilt using NavMeshBuilder");
             }
             else
             {
                 Debug.LogWarning("[DungeonManager] Failed to rebuild NavMesh. Make sure rooms are marked as Navigation Static.");
+            }
+        }
+
+        private System.Collections.IEnumerator SpawnEnemiesAfterNavMeshReady(GameObject enemyPrefab)
+        {
+            // Wait a frame for NavMesh to be fully registered
+            yield return null;
+
+            // Spawn enemies (after NavMesh is ready)
+            if (autoSpawnEnemies && enemyPrefab != null)
+            {
+                _spawnManager = new SpawnPointManager(_levelSeed);
+                _spawnManager.SpawnInAllRooms(_assembler, _generator, enemyPrefab);
+                
+                // Disable NavMeshAgents temporarily and re-enable them after a frame
+                // This ensures they're properly placed on the NavMesh
+                var allEnemies = new List<NavMeshAgent>();
+                foreach (var spawned in _spawnManager.SpawnedObjects)
+                {
+                    if (spawned != null)
+                    {
+                        var agent = spawned.GetComponent<NavMeshAgent>();
+                        if (agent != null)
+                        {
+                            agent.enabled = false;
+                            allEnemies.Add(agent);
+                        }
+                    }
+                }
+
+                // Wait another frame
+                yield return null;
+
+                // Re-enable NavMeshAgents now that NavMesh is ready
+                foreach (var agent in allEnemies)
+                {
+                    if (agent != null)
+                    {
+                        agent.enabled = true;
+                        // Warp agent to its current position to ensure it's on NavMesh
+                        agent.Warp(agent.transform.position);
+                    }
+                }
             }
         }
     }

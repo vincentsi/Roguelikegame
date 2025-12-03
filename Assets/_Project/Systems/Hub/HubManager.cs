@@ -1,8 +1,11 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using ProjectRoguelike.Core;
 using ProjectRoguelike.Systems.Meta;
 using ProjectRoguelike.Gameplay.Player;
+using ProjectRoguelike.Procedural;
+using ProjectRoguelike.UI;
 
 namespace ProjectRoguelike.Systems.Hub
 {
@@ -23,12 +26,17 @@ namespace ProjectRoguelike.Systems.Hub
         [SerializeField] private Vector3 defaultSpawnPosition = new Vector3(0f, 1f, 0f);
 
         [Header("Settings")]
-        [SerializeField] private string runSceneName = "Boot"; // Scene to load for runs (temporary, will be procedural later)
+        [SerializeField] private string runSceneName = "Run"; // Scene to load for runs
 
         [Header("Run Doors")]
         [SerializeField] private RunDoorConfig leftDoor;
         [SerializeField] private RunDoorConfig rightDoor;
         [SerializeField] private RunDoorConfig frontDoor;
+
+        [Header("Procedural Generation")]
+        [SerializeField] private List<RoomData> availableRooms = new List<RoomData>();
+        [SerializeField] private int baseRoomCount = 8; // Base number of rooms
+        [SerializeField] private int roomsPerDifficulty = 2; // Additional rooms per difficulty level
 
         private CurrencyManager _currencyManager;
         private bool _isAnyUIOpen = false;
@@ -40,8 +48,10 @@ namespace ProjectRoguelike.Systems.Hub
             public string doorName = "Level";
             public string levelName = "Level 1";
             public int difficulty = 1;
-            public string sceneName = "Boot"; // Scene to load for this door
+            public string sceneName = "Run"; // Scene to load for this door
             public bool isUnlocked = true;
+            [Tooltip("Optional: Specific seed for this door. -1 = random seed")]
+            public int seed = -1;
         }
 
         private void Awake()
@@ -87,6 +97,13 @@ namespace ProjectRoguelike.Systems.Hub
                 collectionUI.SetActive(false);
             }
 
+            // Hide loading screen when Hub is initialized
+            var loadingScreen = FindObjectOfType<LoadingScreen>();
+            if (loadingScreen != null)
+            {
+                loadingScreen.Hide();
+            }
+
             Debug.Log("[HubManager] Hub initialized");
         }
 
@@ -115,6 +132,10 @@ namespace ProjectRoguelike.Systems.Hub
                 Vector3 spawnPos = playerSpawnPoint != null ? playerSpawnPoint.position : defaultSpawnPosition;
                 var player = Instantiate(playerPrefab, spawnPos, Quaternion.identity);
                 player.name = "Player";
+                
+                // Make player persist between scenes (Hub -> Run -> Hub)
+                DontDestroyOnLoad(player);
+                
                 Debug.Log($"[HubManager] Spawned player at {spawnPos}");
             }
             else
@@ -153,7 +174,24 @@ namespace ProjectRoguelike.Systems.Hub
             var bootstrap = AppBootstrap.Instance;
             if (bootstrap != null && bootstrap.GameStateMachine != null)
             {
-                // TODO: Pass door config to run (difficulty, level type, etc.)
+                // Create RunConfig based on door configuration
+                int seed = door.seed == -1 ? Random.Range(0, int.MaxValue) : door.seed;
+                int targetRoomCount = baseRoomCount + (door.difficulty - 1) * roomsPerDifficulty;
+                
+                RunConfig runConfig = RunConfig.FromDoorConfig(door, seed, targetRoomCount, availableRooms);
+                
+                // Store RunConfig in RunConfigManager
+                if (bootstrap.Services.TryResolve<RunConfigManager>(out var runConfigManager))
+                {
+                    runConfigManager.SetRunConfig(runConfig);
+                    Debug.Log($"[HubManager] RunConfig created: {runConfig.LevelName} (Difficulty: {runConfig.Difficulty}, Seed: {runConfig.Seed}, Rooms: {runConfig.TargetRoomCount})");
+                }
+                else
+                {
+                    Debug.LogWarning("[HubManager] RunConfigManager not found! Run will use default settings.");
+                }
+
+                // Start the run
                 bootstrap.BeginRunLoadingAsync();
             }
             else

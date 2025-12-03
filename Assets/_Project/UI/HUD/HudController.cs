@@ -42,18 +42,10 @@ namespace ProjectRoguelike.UI
                 weaponController.OnAmmoChanged += HandleAmmoChanged;
                 if (weaponController.TryGetAmmoSnapshot(out var current, out var mag, out var reserve))
                 {
-                    Debug.Log($"[HudController] Initial ammo snapshot: {current} / {reserve}");
                     HandleAmmoChanged(current, mag, reserve);
                 }
-                else
-                {
-                    Debug.LogWarning("[HudController] WeaponController has no weapon equipped yet");
-                }
             }
-            else
-            {
-                Debug.LogError("[HudController] WeaponController is not assigned in Inspector!");
-            }
+            // WeaponController is optional - will be assigned when player spawns
         }
 
         private void OnDisable()
