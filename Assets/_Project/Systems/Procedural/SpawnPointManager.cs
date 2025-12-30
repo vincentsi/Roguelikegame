@@ -91,11 +91,34 @@ namespace ProjectRoguelike.Procedural
                 return;
             }
 
-            // Get all RoomModules in the scene (from assembled rooms)
+            // Au lieu de FindObjectsOfType, récupérer les salles depuis l'assembler ou le générateur
+            // Cette méthode devrait recevoir une liste de RoomModule directement
+            Debug.LogWarning("[SpawnPointManager] SpawnInAllRooms with FindObjectsOfType is deprecated. Pass RoomModule list directly.");
+
+            // Fallback: utiliser FindObjectsOfType mais c'est lent
             var roomModules = Object.FindObjectsOfType<RoomModule>();
             foreach (var roomModule in roomModules)
             {
                 SpawnInRoom(roomModule, enemyPrefab);
+            }
+        }
+
+        /// <summary>
+        /// Version optimisée qui prend directement la liste des salles.
+        /// </summary>
+        public void SpawnInRooms(List<RoomModule> roomModules, GameObject enemyPrefab)
+        {
+            if (roomModules == null)
+            {
+                return;
+            }
+
+            foreach (var roomModule in roomModules)
+            {
+                if (roomModule != null)
+                {
+                    SpawnInRoom(roomModule, enemyPrefab);
+                }
             }
         }
 

@@ -156,14 +156,32 @@ namespace ProjectRoguelike.Procedural
 
     public sealed class RoomNode
     {
+        public int NodeId { get; }
         public Vector2Int GridPosition { get; }
         public RoomData RoomData { get; }
+        public RoomType RoomType => RoomData.RoomType;
+        public RoomState State { get; private set; } = RoomState.Unvisited;
+        public bool IsBossRoom { get; set; }
+        public bool IsStartRoom { get; set; }
+        public int Depth { get; set; }
+        public RoomRewardData RewardData { get; set; }
+
         private readonly Dictionary<Direction, RoomNode> _connections = new();
+        private readonly List<RoomEdge> _outgoingEdges = new();
+        private readonly List<RoomEdge> _incomingEdges = new();
+
+        private static int _nextNodeId = 0;
 
         public RoomNode(Vector2Int gridPosition, RoomData roomData)
         {
+            NodeId = _nextNodeId++;
             GridPosition = gridPosition;
             RoomData = roomData;
+        }
+
+        public static void ResetNodeIdCounter()
+        {
+            _nextNodeId = 0;
         }
 
         public void SetConnection(RoomNode other, Direction direction)
@@ -184,6 +202,77 @@ namespace ProjectRoguelike.Procedural
         public IEnumerable<Direction> GetConnectedDirections()
         {
             return _connections.Keys;
+        }
+
+        public void AddOutgoingEdge(RoomEdge edge)
+        {
+            if (edge != null && !_outgoingEdges.Contains(edge))
+            {
+                _outgoingEdges.Add(edge);
+            }
+        }
+
+        public void AddIncomingEdge(RoomEdge edge)
+        {
+            if (edge != null && !_incomingEdges.Contains(edge))
+            {
+                _incomingEdges.Add(edge);
+            }
+        }
+
+        public IReadOnlyList<RoomEdge> GetOutgoingEdges()
+        {
+            return _outgoingEdges;
+        }
+
+        public IReadOnlyList<RoomEdge> GetIncomingEdges()
+        {
+            return _incomingEdges;
+        }
+
+        public List<DoorData> GetAvailableExits()
+        {
+            var exits = new List<DoorData>();
+            foreach (var edge in _outgoingEdges)
+            {
+                if (edge.CanTraverse())
+                {
+                    exits.Add(new DoorData(
+                        edge,
+                        edge.DoorType,
+                        edge.RewardPreview,
+                        true,
+                        Vector3.zero, // Sera défini par DoorManager
+                        Quaternion.identity
+                    ));
+                }
+            }
+            return exits;
+        }
+
+        public void MarkAsVisited()
+        {
+            State = RoomState.Visited;
+        }
+
+        public void MarkAsAvailable()
+        {
+            State = RoomState.Available;
+        }
+
+        public void Lock()
+        {
+            State = RoomState.Locked;
+        }
+
+        public bool CanExit()
+        {
+            return State == RoomState.Available && _outgoingEdges.Count > 0;
+        }
+
+        public RoomNode GetNextNode(DoorData door)
+        {
+            return door.Edge?.ToNode;
         }
     }
 }

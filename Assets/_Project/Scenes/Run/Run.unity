@@ -184,9 +184,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetRoomCount: 8
   seed: -1
-  availableRooms: []
+  availableRooms:
+  - {fileID: 11400000, guid: 69fa1d1da1aa31f438e27b0cac30033d, type: 2}
   dungeonRoot: {fileID: 283770473}
-  enemyPrefab: {fileID: 0}
+  enemyPrefab: {fileID: 4307831728725833519, guid: 342d12a044d5aac438c8b0513b66e6bc, type: 3}
   autoSpawnEnemies: 1
 --- !u!4 &590781687
 Transform:

@@ -70,11 +70,62 @@ namespace ProjectRoguelike.Procedural
                 _ => false
             };
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            // Validation du prefab
+            if (roomPrefab != null)
+            {
+                var roomModule = roomPrefab.GetComponent<RoomModule>();
+                if (roomModule == null)
+                {
+                    Debug.LogError($"[RoomData] Le prefab '{roomPrefab.name}' n'a pas de composant RoomModule! Ajouter un RoomModule au prefab.", this);
+                }
+                else
+                {
+                    // Vérifier que les portes configurées correspondent
+                    ValidateDoor(Direction.North, hasNorthDoor, roomModule);
+                    ValidateDoor(Direction.South, hasSouthDoor, roomModule);
+                    ValidateDoor(Direction.East, hasEastDoor, roomModule);
+                    ValidateDoor(Direction.West, hasWestDoor, roomModule);
+                }
+            }
+
+            // Validation des valeurs
+            if (spawnWeight < 0f)
+            {
+                Debug.LogWarning($"[RoomData] '{roomName}' a un spawnWeight négatif ({spawnWeight}). Sera mis à 0.", this);
+                spawnWeight = 0f;
+            }
+
+            if (minEnemySpawns < 0) minEnemySpawns = 0;
+            if (maxEnemySpawns < minEnemySpawns) maxEnemySpawns = minEnemySpawns;
+            if (minLootSpawns < 0) minLootSpawns = 0;
+            if (maxLootSpawns < minLootSpawns) maxLootSpawns = minLootSpawns;
+        }
+
+        private void ValidateDoor(Direction direction, bool shouldHaveDoor, RoomModule roomModule)
+        {
+            var door = roomModule.GetDoor(direction);
+            if (shouldHaveDoor && door == null)
+            {
+                Debug.LogWarning($"[RoomData] '{roomName}' est configuré pour avoir une porte {direction}, mais le prefab n'en a pas!", this);
+            }
+            else if (!shouldHaveDoor && door != null)
+            {
+                Debug.LogWarning($"[RoomData] '{roomName}' n'est pas configuré pour avoir une porte {direction}, mais le prefab en a une!", this);
+            }
+        }
+#endif
     }
 
     public enum RoomType
     {
         Combat,
+        Elite,          // Combat difficile
+        Shop,           // Magasin
+        Event,          // Événement spécial
         Loot,
         Boss,
         Hub,

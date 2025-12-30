@@ -74,6 +74,47 @@ namespace ProjectRoguelike.Core
         {
             _players.Clear();
         }
+
+        /// <summary>
+        /// Téléporte tous les joueurs à une position donnée.
+        /// </summary>
+        public void TeleportAllPlayers(Vector3 position)
+        {
+            foreach (var player in _players)
+            {
+                if (player != null)
+                {
+                    player.position = position;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Téléporte tous les joueurs vers un transform.
+        /// </summary>
+        public void TeleportAllPlayersTo(Transform target)
+        {
+            if (target == null)
+                return;
+
+            TeleportAllPlayers(target.position);
+        }
+
+        /// <summary>
+        /// Récupère tous les GameObjects des joueurs.
+        /// </summary>
+        public List<GameObject> GetPlayerGameObjects()
+        {
+            var result = new List<GameObject>();
+            foreach (var player in _players)
+            {
+                if (player != null)
+                {
+                    result.Add(player.gameObject);
+                }
+            }
+            return result;
+        }
     }
 }
 
