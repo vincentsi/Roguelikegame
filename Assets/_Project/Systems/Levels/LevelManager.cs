@@ -1,10 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using UnityEngine;
-using ProjectRoguelike.Levels;
 using ProjectRoguelike.Procedural;
 
-namespace ProjectRoguelike.Systems.Levels
+namespace ProjectRoguelike.Levels
 {
     /// <summary>
     /// Gère le niveau actuel (thème, progression, génération).

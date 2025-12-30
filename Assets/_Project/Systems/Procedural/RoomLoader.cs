@@ -15,10 +15,16 @@ namespace ProjectRoguelike.Procedural
         private RoomNode _currentActiveRoom;
         private readonly Queue<RoomNode> _preloadQueue = new();
         private const float RoomSpacing = 20f;
+        private DungeonGraph _currentGraph;
 
         public RoomLoader(Transform dungeonRoot)
         {
             _dungeonRoot = dungeonRoot != null ? dungeonRoot : new GameObject("DungeonRoot").transform;
+        }
+
+        public void SetGraph(DungeonGraph graph)
+        {
+            _currentGraph = graph;
         }
 
         public async Task LoadRoomAsync(RoomNode node)
@@ -157,6 +163,13 @@ namespace ProjectRoguelike.Procedural
         private List<RoomNode> FindAdjacentRooms(RoomNode from, int maxDistance)
         {
             var adjacent = new List<RoomNode>();
+
+            // Si pas de graphe, fallback sur GetConnection (ancien système)
+            if (_currentGraph == null)
+            {
+                return FindAdjacentRoomsLegacy(from, maxDistance);
+            }
+
             var visited = new HashSet<RoomNode> { from };
             var queue = new Queue<(RoomNode node, int distance)>();
             queue.Enqueue((from, 0));
@@ -175,7 +188,44 @@ namespace ProjectRoguelike.Procedural
                     continue;
                 }
 
-                // Parcourir les connexions
+                // Parcourir les edges du graphe
+                var edges = _currentGraph.GetAvailableExits(current);
+                foreach (var edge in edges)
+                {
+                    var next = edge.ToNode;
+                    if (next != null && !visited.Contains(next))
+                    {
+                        visited.Add(next);
+                        queue.Enqueue((next, distance + 1));
+                    }
+                }
+            }
+
+            return adjacent;
+        }
+
+        private List<RoomNode> FindAdjacentRoomsLegacy(RoomNode from, int maxDistance)
+        {
+            var adjacent = new List<RoomNode>();
+            var visited = new HashSet<RoomNode> { from };
+            var queue = new Queue<(RoomNode node, int distance)>();
+            queue.Enqueue((from, 0));
+
+            while (queue.Count > 0)
+            {
+                var (current, distance) = queue.Dequeue();
+
+                if (distance > 0 && distance <= maxDistance)
+                {
+                    adjacent.Add(current);
+                }
+
+                if (distance >= maxDistance)
+                {
+                    continue;
+                }
+
+                // Parcourir les connexions (ancien système)
                 var directions = new[] { Direction.North, Direction.East, Direction.South, Direction.West };
                 foreach (var dir in directions)
                 {

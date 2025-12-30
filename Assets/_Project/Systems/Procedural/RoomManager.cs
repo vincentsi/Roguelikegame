@@ -31,6 +31,9 @@ namespace ProjectRoguelike.Procedural
             _roomLoader = roomLoader ?? throw new System.ArgumentNullException(nameof(roomLoader));
             _doorManager = doorManager ?? throw new System.ArgumentNullException(nameof(doorManager));
 
+            // Passer le graphe au RoomLoader pour le préchargement
+            _roomLoader.SetGraph(_currentGraph);
+
             if (_currentGraph.StartNode == null)
             {
                 Debug.LogError("[RoomManager] Graph has no start node!");

@@ -258,35 +258,43 @@ namespace ProjectRoguelike.Core
             // Ensure player exists in Run scene (might have been destroyed during scene load)
             EnsurePlayerInRunScene();
 
-            // Find DungeonManager in the scene and generate the dungeon
-            var dungeonManager = UnityEngine.Object.FindObjectOfType<DungeonManager>();
-            if (dungeonManager != null)
+            // Chercher DungeonSystemBridge pour supporter les deux systèmes
+            var dungeonBridge = UnityEngine.Object.FindObjectOfType<DungeonSystemBridge>();
+
+            if (dungeonBridge != null)
             {
-                // Clear any existing dungeon
-                dungeonManager.ClearDungeon();
-
-                // Configure DungeonManager with run config
-                dungeonManager.SetSeed(runConfig.Seed);
-                dungeonManager.SetTargetRoomCount(runConfig.TargetRoomCount);
-                
-                if (runConfig.AvailableRooms.Count > 0)
-                {
-                    dungeonManager.SetAvailableRooms(runConfig.AvailableRooms);
-                }
-                else
-                {
-                    Debug.LogError("[RunLoadingState] No available rooms in RunConfig! Make sure RoomData are assigned in HubManager.");
-                }
-
+                // Utiliser le bridge (supporte legacy et nouveau système)
                 if (loadingScreen != null)
                 {
                     loadingScreen.SetMessage("Generating dungeon...");
                     loadingScreen.SetProgress(0.5f);
                 }
 
-                // Generate the dungeon
-                dungeonManager.GenerateDungeon();
-                
+                if (dungeonBridge.IsUsingLegacySystem)
+                {
+                    var dungeonManager = dungeonBridge.LegacyDungeonManager;
+                    if (dungeonManager != null)
+                    {
+                        dungeonManager.ClearDungeon();
+                        dungeonManager.SetSeed(runConfig.Seed);
+                        dungeonManager.SetTargetRoomCount(runConfig.TargetRoomCount);
+
+                        if (runConfig.AvailableRooms.Count > 0)
+                        {
+                            dungeonManager.SetAvailableRooms(runConfig.AvailableRooms);
+                        }
+
+                        dungeonManager.GenerateDungeon();
+                    }
+                }
+                else
+                {
+                    // Nouveau système - nécessite LevelTheme
+                    Debug.LogWarning("[RunLoadingState] New dungeon system requires LevelTheme. Using bridge generation.");
+                    // TODO: Récupérer LevelTheme depuis RunConfig ou HubManager
+                    // await dungeonBridge.GenerateDungeonAsync(levelTheme, difficulty, runConfig.Seed);
+                }
+
                 if (loadingScreen != null)
                 {
                     loadingScreen.SetProgress(0.9f);
@@ -295,14 +303,47 @@ namespace ProjectRoguelike.Core
             }
             else
             {
-                Debug.LogError("[RunLoadingState] DungeonManager not found in Run scene! Make sure you've created the Run scene with Tools > Create Run Scene.");
-                
-                // Hide loading screen even if there's an error
-                if (loadingScreen != null)
+                // Fallback: chercher DungeonManager directement (ancien système)
+                var dungeonManager = UnityEngine.Object.FindObjectOfType<DungeonManager>();
+                if (dungeonManager != null)
                 {
-                    loadingScreen.Hide();
+                    dungeonManager.ClearDungeon();
+                    dungeonManager.SetSeed(runConfig.Seed);
+                    dungeonManager.SetTargetRoomCount(runConfig.TargetRoomCount);
+
+                    if (runConfig.AvailableRooms.Count > 0)
+                    {
+                        dungeonManager.SetAvailableRooms(runConfig.AvailableRooms);
+                    }
+                    else
+                    {
+                        Debug.LogError("[RunLoadingState] No available rooms in RunConfig!");
+                    }
+
+                    if (loadingScreen != null)
+                    {
+                        loadingScreen.SetMessage("Generating dungeon...");
+                        loadingScreen.SetProgress(0.5f);
+                    }
+
+                    dungeonManager.GenerateDungeon();
+
+                    if (loadingScreen != null)
+                    {
+                        loadingScreen.SetProgress(0.9f);
+                        loadingScreen.SetMessage("Almost there...");
+                    }
                 }
-                return; // Don't transition to RunActive if dungeon generation failed
+                else
+                {
+                    Debug.LogError("[RunLoadingState] No dungeon generation system found in Run scene!");
+
+                    if (loadingScreen != null)
+                    {
+                        loadingScreen.Hide();
+                    }
+                    return;
+                }
             }
 
             // Transition to RunActive after generation
