@@ -73,14 +73,28 @@ namespace ProjectRoguelike.Gameplay.Enemies
             if (bootstrap != null && bootstrap.Services.TryResolve<PlayerManager>(out _playerManager))
             {
                 _player = _playerManager.GetClosestPlayer(transform.position);
+                if (_player != null)
+                {
+                    Debug.Log($"[EnemyAI] Found player via PlayerManager: {_player.name}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[EnemyAI] PlayerManager exists but no player found. PlayerCount: {_playerManager.PlayerCount}");
+                }
             }
             else
             {
+                Debug.LogWarning("[EnemyAI] PlayerManager not available, using fallback tag search");
                 // Fallback to tag-based search if service not available
                 var playerObj = GameObject.FindGameObjectWithTag("Player");
                 if (playerObj != null)
                 {
                     _player = playerObj.transform;
+                    Debug.Log($"[EnemyAI] Found player via tag: {_player.name}");
+                }
+                else
+                {
+                    Debug.LogError("[EnemyAI] No player found! Make sure player has 'Player' tag.");
                 }
             }
 

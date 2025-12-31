@@ -38,7 +38,7 @@ namespace ProjectRoguelike.Gameplay.Enemies
 
         public void SetDestination(Vector3 position)
         {
-            if (_agent != null && _agent.isActiveAndEnabled)
+            if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
             {
                 _targetPosition = position;
                 _agent.SetDestination(position);
@@ -55,7 +55,7 @@ namespace ProjectRoguelike.Gameplay.Enemies
 
         public void Stop()
         {
-            if (_agent != null && _agent.isActiveAndEnabled)
+            if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
             {
                 _agent.isStopped = true;
             }
@@ -63,7 +63,7 @@ namespace ProjectRoguelike.Gameplay.Enemies
 
         public void Resume()
         {
-            if (_agent != null && _agent.isActiveAndEnabled)
+            if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
             {
                 _agent.isStopped = false;
             }

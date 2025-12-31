@@ -18,7 +18,7 @@ namespace ProjectRoguelike.Gameplay.Procedural
 
         public RoomEdge Edge => _edge;
         public DoorType DoorType => _edge?.DoorType ?? DoorType.Random;
-        public RoomRewardData RewardPreview => _edge?.RewardPreview;
+        public GeneratedReward RewardPreview => _edge?.RewardPreview;
         public bool IsLocked { get; private set; } = true;
         public bool IsInteractable => _isInteractable && !IsLocked;
 

@@ -28,7 +28,7 @@ namespace ProjectRoguelike.Gameplay.Procedural
         private DoorType _currentType;
         private bool _isGlowing = false;
 
-        public void UpdateVisual(DoorType type, RoomRewardData reward)
+        public void UpdateVisual(DoorType type, GeneratedReward reward)
         {
             _currentType = type;
 
@@ -109,7 +109,7 @@ namespace ProjectRoguelike.Gameplay.Procedural
             };
         }
 
-        private string GetTextForType(DoorType type, RoomRewardData reward)
+        private string GetTextForType(DoorType type, GeneratedReward reward)
         {
             if (reward != null && !string.IsNullOrEmpty(reward.RewardName))
             {

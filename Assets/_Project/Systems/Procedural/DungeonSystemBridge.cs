@@ -48,7 +48,6 @@ namespace ProjectRoguelike.Procedural
                     var levelGO = new GameObject("[LevelManager]");
                     levelGO.transform.SetParent(transform);
                     levelManager = levelGO.AddComponent<LevelManager>();
-                    levelManager.Initialize(legacyDungeonManager, roomManager, doorManager, generatorSettings);
                 }
 
                 if (roomManager == null)
@@ -70,14 +69,15 @@ namespace ProjectRoguelike.Procedural
         /// <summary>
         /// Génère un donjon en utilisant le système sélectionné.
         /// </summary>
-        public async System.Threading.Tasks.Task GenerateDungeonAsync(LevelTheme theme, int difficulty, int seed = -1)
+        public async System.Threading.Tasks.Task GenerateDungeonAsync(LevelTheme theme, int difficulty)
         {
             if (useLegacySystem)
             {
-                // Utiliser l'ancien système
+                // Utiliser l'ancien système (non async)
                 if (legacyDungeonManager != null)
                 {
-                    await legacyDungeonManager.GenerateDungeon(difficulty, seed);
+                    legacyDungeonManager.GenerateDungeon();
+                    await System.Threading.Tasks.Task.Yield();
                 }
                 else
                 {
@@ -105,7 +105,7 @@ namespace ProjectRoguelike.Procedural
         {
             return useLegacySystem
                 ? (object)legacyDungeonManager?.Generator
-                : levelManager?.CurrentDungeon;
+                : levelManager?.GetCurrentDungeon();
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace ProjectRoguelike.Procedural
         {
             if (useLegacySystem)
             {
-                legacyDungeonManager?.Clear();
+                legacyDungeonManager?.ClearDungeon();
             }
             else
             {

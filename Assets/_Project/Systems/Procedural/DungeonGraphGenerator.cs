@@ -14,6 +14,8 @@ namespace ProjectRoguelike.Procedural
         private readonly LevelSeed _seed;
         private readonly DungeonGeneratorSettings _settings;
         private int _nextEdgeId = 0;
+        private LevelTheme _currentTheme;
+        private RewardGenerator _rewardGenerator;
 
         public DungeonGraphGenerator(LevelSeed seed, DungeonGeneratorSettings settings)
         {
@@ -28,6 +30,10 @@ namespace ProjectRoguelike.Procedural
                 Debug.LogError("[DungeonGraphGenerator] LevelTheme is null!");
                 return null;
             }
+
+            // Initialiser le thème et le générateur de récompenses
+            _currentTheme = theme;
+            _rewardGenerator = new RewardGenerator(_seed, theme);
 
             var graph = new DungeonGraph
             {
@@ -79,7 +85,10 @@ namespace ProjectRoguelike.Procedural
                 // 5. Connecter toutes les salles au boss
                 EnsureBossReachable(graph, pathRooms, bossNode);
 
-                // 6. Valider le graphe
+                // 6. Assigner des récompenses à toutes les edges
+                AssignRewardsToGraph(graph, totalRooms);
+
+                // 7. Valider le graphe
                 if (ValidateGraph(graph))
                 {
                     Debug.Log($"[DungeonGraphGenerator] Generated graph with {graph.Nodes.Count} nodes and {graph.Edges.Count} edges");
@@ -156,12 +165,127 @@ namespace ProjectRoguelike.Procedural
             return pathRooms;
         }
 
-        private void CreateExitsForRoom(RoomNode node, int exitCount, DungeonGraph graph, 
+        private void CreateExitsForRoom(RoomNode node, int exitCount, DungeonGraph graph,
             Dictionary<Vector2Int, RoomNode> grid, List<RoomNode> availableNodes, int depth, int totalRooms)
         {
-            // Cette méthode est appelée pendant la création des salles
-            // Les connexions seront faites dans EnsureBossReachable
-            // On marque juste les directions disponibles pour plus tard
+            // Créer 2-3 sorties par salle pour offrir des choix au joueur
+            var availableDirections = new List<Direction>();
+
+            // Trouver toutes les directions disponibles sur le RoomData
+            foreach (Direction dir in System.Enum.GetValues(typeof(Direction)))
+            {
+                // Vérifier que la salle a une porte dans cette direction
+                if (node.RoomData.HasDoorInDirection(dir) && !node.HasConnection(dir))
+                {
+                    availableDirections.Add(dir);
+                }
+            }
+
+            // Shuffle pour randomiser
+            for (int i = availableDirections.Count - 1; i > 0; i--)
+            {
+                int j = _seed.NextInt(i + 1);
+                (availableDirections[i], availableDirections[j]) = (availableDirections[j], availableDirections[i]);
+            }
+
+            // Créer jusqu'à exitCount sorties
+            int createdExits = 0;
+            foreach (var direction in availableDirections)
+            {
+                if (createdExits >= exitCount) break;
+
+                // Calculer la position de la salle suivante
+                Vector2Int offset = GetDirectionOffset(direction);
+                Vector2Int nextPosition = node.GridPosition + offset;
+
+                // Éviter de créer une salle trop proche du départ ou déjà occupée
+                if (grid.ContainsKey(nextPosition))
+                    continue;
+
+                // Créer une nouvelle salle ou connecter à une salle existante dans availableNodes
+                RoomNode targetNode = null;
+
+                // Chercher d'abord une salle disponible proche
+                var nearbyRoom = availableNodes.FirstOrDefault(r =>
+                    !grid.ContainsKey(nextPosition) &&
+                    r.Depth <= depth + 1 &&
+                    r != node);
+
+                if (nearbyRoom != null && _seed.NextFloat() > 0.7f) // 30% de chance de connecter à une salle existante
+                {
+                    targetNode = nearbyRoom;
+                }
+                else
+                {
+                    // Créer une nouvelle salle
+                    var roomType = SelectRoomType(depth + 1, totalRooms);
+                    var roomPool = _currentTheme.GetRoomsByType(roomType);
+
+                    if (roomPool.Count > 0)
+                    {
+                        int roomIndex = _seed.NextInt(roomPool.Count);
+                        var roomData = roomPool[roomIndex];
+
+                        // Vérifier que la nouvelle salle a une porte dans la direction opposée
+                        Direction oppositeDir = GetOppositeDirection(direction);
+                        if (!roomData.HasDoorInDirection(oppositeDir))
+                            continue;
+
+                        targetNode = new RoomNode(nextPosition, roomData)
+                        {
+                            Depth = depth + 1,
+                            IsStartRoom = false
+                        };
+
+                        graph.AddNode(targetNode);
+                        grid[nextPosition] = targetNode;
+                        availableNodes.Add(targetNode);
+                    }
+                }
+
+                // Créer la connexion si on a une salle cible
+                if (targetNode != null)
+                {
+                    // Sélectionner un type de porte (sera rempli avec des récompenses plus tard)
+                    DoorType doorType = SelectDoorType(node, depth, totalRooms);
+                    ConnectRooms(graph, node, targetNode, direction, doorType);
+                    createdExits++;
+                }
+            }
+
+            // S'assurer qu'on a créé au moins 1 sortie (fallback)
+            if (createdExits == 0 && availableDirections.Count > 0)
+            {
+                Debug.LogWarning($"[DungeonGraphGenerator] Failed to create exits for room at {node.GridPosition}, forcing one exit");
+                // Forcer au moins une connexion
+                var forcedDirection = availableDirections[0];
+                Vector2Int offset = GetDirectionOffset(forcedDirection);
+                Vector2Int nextPosition = node.GridPosition + offset;
+
+                if (!grid.ContainsKey(nextPosition))
+                {
+                    var roomType = SelectRoomType(depth + 1, totalRooms);
+                    var roomPool = _currentTheme.GetRoomsByType(roomType);
+
+                    if (roomPool.Count > 0)
+                    {
+                        int roomIndex = _seed.NextInt(roomPool.Count);
+                        var roomData = roomPool[roomIndex];
+
+                        var targetNode = new RoomNode(nextPosition, roomData)
+                        {
+                            Depth = depth + 1
+                        };
+
+                        graph.AddNode(targetNode);
+                        grid[nextPosition] = targetNode;
+                        availableNodes.Add(targetNode);
+
+                        DoorType doorType = SelectDoorType(node, depth, totalRooms);
+                        ConnectRooms(graph, node, targetNode, forcedDirection, doorType);
+                    }
+                }
+            }
         }
 
         private RoomNode CreateBossRoom(LevelTheme theme, DungeonGraph graph, int totalRooms)
@@ -442,6 +566,50 @@ namespace ProjectRoguelike.Procedural
         private Direction GetOppositeDirection(Direction direction)
         {
             return (Direction)(((int)direction + 2) % 4);
+        }
+
+        /// <summary>
+        /// Assigne des récompenses à toutes les edges du graphe.
+        /// </summary>
+        private void AssignRewardsToGraph(DungeonGraph graph, int totalRooms)
+        {
+            if (_rewardGenerator == null)
+            {
+                Debug.LogError("[DungeonGraphGenerator] RewardGenerator is null!");
+                return;
+            }
+
+            // Pour chaque salle (sauf le boss), assigner des récompenses à ses sorties
+            foreach (var node in graph.Nodes)
+            {
+                if (node.IsBossRoom) continue; // Le boss n'a pas de sorties
+
+                // Récupérer toutes les edges sortantes de cette salle
+                var outgoingEdges = node.GetOutgoingEdges().ToList();
+
+                if (outgoingEdges.Count > 0)
+                {
+                    _rewardGenerator.AssignRewardsToRoomExits(node, outgoingEdges, node.Depth, totalRooms);
+                }
+            }
+
+            // Valider que toutes les edges ont des récompenses
+            int validEdges = 0;
+            int totalEdges = graph.Edges.Count;
+
+            foreach (var edge in graph.Edges)
+            {
+                if (RewardGenerator.ValidateEdgeReward(edge))
+                {
+                    validEdges++;
+                }
+                else
+                {
+                    Debug.LogWarning($"[DungeonGraphGenerator] Edge {edge.EdgeId} missing reward data");
+                }
+            }
+
+            Debug.Log($"[DungeonGraphGenerator] Assigned rewards to {validEdges}/{totalEdges} edges");
         }
 
         private bool ValidateGraph(DungeonGraph graph)

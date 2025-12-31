@@ -164,7 +164,7 @@ namespace ProjectRoguelike.Procedural
         public bool IsBossRoom { get; set; }
         public bool IsStartRoom { get; set; }
         public int Depth { get; set; }
-        public RoomRewardData RewardData { get; set; }
+        public GeneratedReward RewardData { get; set; }
 
         private readonly Dictionary<Direction, RoomNode> _connections = new();
         private readonly List<RoomEdge> _outgoingEdges = new();

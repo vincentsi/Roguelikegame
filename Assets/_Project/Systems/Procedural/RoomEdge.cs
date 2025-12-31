@@ -8,10 +8,10 @@ namespace ProjectRoguelike.Procedural
         public int EdgeId { get; }
         public RoomNode FromNode { get; }
         public RoomNode ToNode { get; }
-        public DoorType DoorType { get; }
+        public DoorType DoorType { get; set; }
         public Direction Direction { get; }
         public bool IsLocked { get; private set; }
-        public RoomRewardData RewardPreview { get; set; }
+        public GeneratedReward RewardPreview { get; set; }
         public float TraverseCost { get; set; } = 1f;
 
         public RoomEdge(int edgeId, RoomNode fromNode, RoomNode toNode, DoorType doorType, Direction direction)

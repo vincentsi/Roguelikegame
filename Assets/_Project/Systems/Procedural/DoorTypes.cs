@@ -36,12 +36,12 @@ namespace ProjectRoguelike.Procedural
     {
         public RoomEdge Edge;
         public DoorType Type;
-        public RoomRewardData Reward;
+        public GeneratedReward Reward;
         public bool IsAvailable;
         public Vector3 WorldPosition;
         public Quaternion WorldRotation;
 
-        public DoorData(RoomEdge edge, DoorType type, RoomRewardData reward, bool isAvailable, Vector3 position, Quaternion rotation)
+        public DoorData(RoomEdge edge, DoorType type, GeneratedReward reward, bool isAvailable, Vector3 position, Quaternion rotation)
         {
             Edge = edge;
             Type = type;

@@ -195,7 +195,7 @@ namespace ProjectRoguelike.Procedural
             }
 
             // Utiliser PlayerManager au lieu de FindGameObjectsWithTag
-            var playerManager = ServiceRegistry.Get<PlayerManager>();
+            var playerManager = AppBootstrap.Instance?.Services?.Resolve<PlayerManager>();
             if (playerManager == null || playerManager.PlayerCount == 0)
             {
                 Debug.LogWarning("[RoomManager] No PlayerManager or no players registered!");

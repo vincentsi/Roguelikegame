@@ -172,13 +172,13 @@ namespace ProjectRoguelike.Levels
             OnLevelComplete?.Invoke();
         }
 
-        public void OnLevelComplete()
+        public void HandleLevelComplete()
         {
             // Sauvegarder progression, donner récompenses, etc.
             Debug.Log($"[LevelManager] Level {_currentLevelIndex} completed!");
         }
 
-        public void OnLevelFailed()
+        public void HandleLevelFailed()
         {
             OnLevelFailed?.Invoke();
             Debug.Log($"[LevelManager] Level {_currentLevelIndex} failed!");

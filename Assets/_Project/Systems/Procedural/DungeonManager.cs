@@ -21,6 +21,7 @@ namespace ProjectRoguelike.Procedural
         [Header("Spawning")]
         [SerializeField] private GameObject enemyPrefab;
         [SerializeField] private bool autoSpawnEnemies = true;
+        [SerializeField] private bool autoSpawnPlayer = true;
 
         private LevelSeed _levelSeed;
         private DungeonGenerator _generator;
@@ -72,11 +73,10 @@ namespace ProjectRoguelike.Procedural
             // Rebuild NavMesh after rooms are placed
             RebuildNavMesh();
 
-            // Wait a frame for NavMesh to be fully ready
-            // (NavMesh rebuild is synchronous but agents need a frame to register)
+            // Wait a frame for NavMesh to be fully ready, then spawn player and enemies
             if (Application.isPlaying)
             {
-                StartCoroutine(SpawnEnemiesAfterNavMeshReady(enemyPrefab));
+                StartCoroutine(SpawnEntitiesAfterNavMeshReady(enemyPrefab));
             }
             else
             {
@@ -147,43 +147,143 @@ namespace ProjectRoguelike.Procedural
                 var navMeshSurface = FindObjectOfType(navMeshSurfaceType);
                 if (navMeshSurface != null)
                 {
+                    Debug.Log("[DungeonManager] Building NavMesh using NavMeshSurface...");
                     var buildMethod = navMeshSurfaceType.GetMethod("BuildNavMesh");
                     buildMethod?.Invoke(navMeshSurface, null);
+                    Debug.Log("[DungeonManager] NavMesh built successfully!");
                     return;
+                }
+                else
+                {
+                    Debug.LogWarning("[DungeonManager] NavMeshSurface component not found. Add NavMeshSurface to scene or DungeonManager GameObject.");
                 }
             }
 
             // Fallback: Manual rebake using NavMeshBuilder
+            Debug.Log("[DungeonManager] Building NavMesh using NavMeshBuilder (fallback)...");
             var buildSettings = NavMesh.GetSettingsByID(0);
-            var bounds = new Bounds(Vector3.zero, Vector3.one * 1000f); // Large bounds to cover all rooms
-            
-            // Collect all static geometry
+
+            // Calculate bounds based on actual dungeon size
+            Bounds bounds = new Bounds(dungeonRoot.position, Vector3.one);
+            foreach (Transform child in dungeonRoot)
+            {
+                var renderers = child.GetComponentsInChildren<Renderer>();
+                foreach (var renderer in renderers)
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+            bounds.Expand(10f); // Add some padding
+
+            // Collect all geometry from dungeon root
             var sources = new List<NavMeshBuildSource>();
-            NavMeshBuilder.CollectSources(bounds, 0, NavMeshCollectGeometry.RenderMeshes, 0, new List<NavMeshBuildMarkup>(), sources);
-            
+            var markups = new List<NavMeshBuildMarkup>();
+            NavMeshBuilder.CollectSources(dungeonRoot, ~0, NavMeshCollectGeometry.PhysicsColliders, 0, markups, sources);
+
+            if (sources.Count == 0)
+            {
+                Debug.LogError("[DungeonManager] No NavMesh sources found! Make sure room prefabs have colliders and are children of DungeonRoot.");
+                return;
+            }
+
+            Debug.Log($"[DungeonManager] Found {sources.Count} NavMesh sources in bounds {bounds}");
+
             var data = NavMeshBuilder.BuildNavMeshData(buildSettings, sources, bounds, Vector3.zero, Quaternion.identity);
             if (data != null)
             {
                 NavMesh.RemoveAllNavMeshData();
                 NavMesh.AddNavMeshData(data);
+                Debug.Log("[DungeonManager] NavMesh built successfully!");
             }
             else
             {
-                Debug.LogWarning("[DungeonManager] Failed to rebuild NavMesh. Make sure rooms are marked as Navigation Static.");
+                Debug.LogError("[DungeonManager] Failed to build NavMesh data. Check that rooms have colliders.");
             }
         }
 
-        private System.Collections.IEnumerator SpawnEnemiesAfterNavMeshReady(GameObject enemyPrefab)
+        private void SpawnPlayerIfNeeded()
+        {
+            // Get PlayerManager first
+            var bootstrap = ProjectRoguelike.Core.AppBootstrap.Instance;
+            if (bootstrap == null || !bootstrap.Services.TryResolve<ProjectRoguelike.Core.PlayerManager>(out var playerManager))
+            {
+                Debug.LogError("[DungeonManager] PlayerManager not available! Cannot spawn player.");
+                return;
+            }
+
+            // Check if player is already registered in PlayerManager (more reliable than tag search)
+            if (playerManager.PlayerCount > 0)
+            {
+                Debug.Log("[DungeonManager] Player already registered in PlayerManager, skipping spawn.");
+                return;
+            }
+
+            // Check if unregistered player exists in scene and register it
+            var existingPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (existingPlayer != null)
+            {
+                Debug.Log("[DungeonManager] Found existing unregistered player, registering it now.");
+                playerManager.RegisterPlayer(existingPlayer.transform);
+                return;
+            }
+
+            // Load player prefab from Resources
+            var playerPrefab = Resources.Load<GameObject>("Prefabs/player/Player");
+            if (playerPrefab == null)
+            {
+                Debug.LogError("[DungeonManager] Player prefab not found at Resources/Prefabs/player/Player!");
+                return;
+            }
+
+            // Find spawn position (first room center)
+            // Convert GridPosition to world position using RoomSpacing constant (20f)
+            Vector3 spawnPosition = Vector3.zero;
+            if (_generator != null && _generator.Nodes.Count > 0)
+            {
+                var firstRoom = _generator.Nodes[0];
+                const float RoomSpacing = 20f; // Must match RoomAssembler.RoomSpacing
+                spawnPosition = new Vector3(
+                    firstRoom.GridPosition.x * RoomSpacing,
+                    1f, // Spawn 1m above ground
+                    firstRoom.GridPosition.y * RoomSpacing
+                );
+            }
+
+            // Instantiate player
+            var player = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
+            player.name = "Player";
+
+            // Ensure player has the Player tag
+            if (!player.CompareTag("Player"))
+            {
+                player.tag = "Player";
+            }
+
+            // Register with PlayerManager IMMEDIATELY (don't wait for PlayerRegistration component)
+            playerManager.RegisterPlayer(player.transform);
+            Debug.Log($"[DungeonManager] Player spawned and registered at {spawnPosition}! PlayerCount: {playerManager.PlayerCount}");
+        }
+
+        private System.Collections.IEnumerator SpawnEntitiesAfterNavMeshReady(GameObject enemyPrefab)
         {
             // Wait a frame for NavMesh to be fully registered
             yield return null;
 
-            // Spawn enemies (after NavMesh is ready)
+            // Spawn player FIRST (so PlayerManager has player registered before enemies spawn)
+            if (autoSpawnPlayer)
+            {
+                SpawnPlayerIfNeeded();
+            }
+
+            // Wait another frame to ensure player is fully registered in PlayerManager
+            yield return null;
+
+            // Spawn enemies (after NavMesh and player are ready)
             if (autoSpawnEnemies && enemyPrefab != null)
             {
                 _spawnManager = new SpawnPointManager(_levelSeed);
                 _spawnManager.SpawnInAllRooms(_assembler, _generator, enemyPrefab);
-                
+
                 // Disable NavMeshAgents temporarily and re-enable them after a frame
                 // This ensures they're properly placed on the NavMesh
                 var allEnemies = new List<NavMeshAgent>();
